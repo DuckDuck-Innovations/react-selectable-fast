@@ -151,7 +151,7 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
   selectableGroup: Maybe<HTMLElement> = null
 
   scrollContainer: Maybe<HTMLElement> = null
-  actualScrollContainer: Maybe<HtmlElement> = null
+  actualScrollContainer: Maybe<HTMLElement> = null
 
   maxScrollTop = 0
 
@@ -401,7 +401,6 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
 
   selectItems = (selectboxBounds: TComputedBounds, options: TSelectItemsOptions = {}) => {
     const { tolerance, enableDeselect, mixedDeselect } = this.props
-
     for (const item of this.registry.values()) {
       this.processItem({
         item,
@@ -416,30 +415,42 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
 
   processItem(options: TProcessItemOptions) {
     const { item, tolerance, selectboxBounds, enableDeselect, mixedDeselect, isFromClick } = options
+    // @ts-ignore
+    let file : string = item.props.file.name;
 
     const { delta } = this.props
     const isCollided = doObjectsCollide(selectboxBounds, item.bounds!, tolerance, delta)
     const { isSelecting, isSelected } = item.state
-
+    if (file==='Test') {
+      console.log(isFromClick, isCollided, isSelected, isSelecting)
+    }
     if (isFromClick && isCollided) {
       if (isSelected) {
         this.selectedItems.delete(item)
       } else {
         this.selectedItems.add(item)
+        this.selectingItems.add(item)
       }
 
       item.setState({ isSelected: !isSelected })
       this.clickedItem = item
 
+      if (file==='Test') {
+        console.log("Return item a",item);
+      }
+
       return item
     }
 
     if (!isFromClick && isCollided) {
-      if (isSelected && enableDeselect && (!this.selectionStarted || mixedDeselect)) {
+      if (isSelected && enableDeselect && (!this.selectionStarted || mixedDeselect) && this.clickedItem !== item) {
         item.setState({ isSelected: false })
         item.deselected = true
 
         this.deselectionStarted = true
+        if (file==='Test') {
+          console.log("Return item b",item);
+        }
 
         return this.selectedItems.delete(item)
       }
@@ -451,6 +462,9 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
 
         this.selectionStarted = true
         this.selectingItems.add(item)
+        if (file==='Test') {
+          console.log("Return item c",item);
+        }
 
         return { updateSelecting: true }
       }
@@ -461,6 +475,9 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
         item.setState({ isSelecting: false })
 
         this.selectingItems.delete(item)
+        if (file==='Test') {
+          console.log("Return item d",item);
+        }
 
         return { updateSelecting: true }
       }
@@ -542,6 +559,7 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
       return
     }
 
+    this.selectingItems.clear()
 
     this.mouseDownStarted = true
     this.mouseUpStarted = false
@@ -550,8 +568,8 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
     if (this.props.resetOnStart && evt.target === this.selectableGroup) {
       this.clearSelection();
     }
-    if (isNodeInRoot(evt.target, this.selectableGroup!)) {
-      if (!evt.cmdKey && !evt.ctrlKey) {
+    if (isNodeInRoot(evt.target as any, this.selectableGroup!)) {
+      if (!evt.metaKey && !evt.ctrlKey) {
         this.clearSelection();
       }
       this.handleClick(evt, evt.pageY, evt.pageX);
@@ -622,7 +640,6 @@ export class SelectableGroup extends Component<TSelectableGroupProps> {
     }
 
     const evt: any = castTouchToMouseEvent(event)
-    const { pageX, pageY } = evt
 
     if (!this.mouseMoved && isNodeInRoot(evt.target as HTMLElement, this.selectableGroup!)) {
       // this.handleClick(evt, pageY, pageX)
